@@ -1,9 +1,14 @@
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+
 from datetime import datetime
 import os
 import shutil
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+from app import buscar_archivo_ini, leer_configuracion, find_and_move_files, editar_potencia
 
+# -----------------------------
+# Funciones para mover archivos
+# -----------------------------
 def select_source():
     path = filedialog.askdirectory()
     if path:
@@ -28,41 +33,42 @@ def move_files():
     except Exception as e:
         messagebox.showerror("Error", f"Ha ocurrido un error: {e}")
 
-def find_and_move_files(source_path, destination_path):
-    if not os.path.exists(source_path):
-        raise FileNotFoundError(f"La ruta de origen no existe: {source_path}")
+# -----------------------------
+# Funciones para configuración de antena
+# -----------------------------
+def mostrar_datos_antena():
+    try:
+        archivo_ini = buscar_archivo_ini()
+        remote_host, potencia = leer_configuracion(archivo_ini)
 
-    # Crear el nombre de la carpeta basada en la fecha
-    today = datetime.now().strftime("%d.%m.%y")
-    folder_name = today
-    counter = 1
+        # Mostrar los datos en la interfaz
+        label_host.config(text=f"REMOTE_HOST: {remote_host}")
+        label_potencia.config(text=f"POTENCIA: {potencia}")
 
-    # Asegurar que el nombre de la carpeta sea único
-    while os.path.exists(os.path.join(destination_path, folder_name)):
-        folder_name = f"{today}-{counter}"
-        counter += 1
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al leer el archivo: {e}")
 
-    # Crear la carpeta de destino
-    final_destination = os.path.join(destination_path, folder_name)
-    os.makedirs(final_destination)
+def actualizar_potencia():
+    try:
+        archivo_ini = buscar_archivo_ini()
+        nueva_potencia = potencia_entry.get()
 
-    # Buscar y mover archivos .dat
-    files_moved = 0
-    for root, _, files in os.walk(source_path):
-        for file in files:
-            if file.lower().endswith(".dat"):
-                src_file = os.path.join(root, file)
-                dest_file = os.path.join(final_destination, file)
-                shutil.move(src_file, dest_file)
-                files_moved += 1
+        if not nueva_potencia.isdigit():
+            messagebox.showerror("Error", "La potencia debe ser un número.")
+            return
 
-    return final_destination
+        editar_potencia(archivo_ini, nueva_potencia)
+        messagebox.showinfo("Éxito", "POTENCIA actualizada correctamente")
+        mostrar_datos_antena()
+    except Exception as e:
+        messagebox.showerror("Error", f"Error al actualizar la potencia: {e}")
 
-
-# Crear la ventana principal
+# -----------------------------
+# Configuración de la interfaz gráfica
+# -----------------------------
 root = tk.Tk()
-root.title("Mover Archivos .dat")
-root.geometry("500x300")
+root.title("Configuración y Mover Archivos")
+root.geometry("500x600")
 root.resizable(False, False)
 
 # Variables
@@ -76,19 +82,39 @@ style.configure("TButton", background="#1d3557", foreground="white", font=("Aria
 style.configure("TLabel", font=("Arial", 10))
 style.configure("TEntry", font=("Arial", 10))
 
-# Títulos
-ttk.Label(root, text="Ruta de Origen:").pack(pady=(20, 5))
+# -----------------------------
+# Sección: Mover Archivos
+# -----------------------------
+ttk.Label(root, text="Mover Archivos .dat").pack(pady=(20, 5))
+
+ttk.Label(root, text="Ruta de Origen:").pack(pady=(10, 5))
 source_entry = ttk.Entry(root, textvariable=source_path_var, width=50)
 source_entry.pack(pady=5)
 ttk.Button(root, text="Seleccionar Carpeta", command=select_source).pack(pady=5)
 
-ttk.Label(root, text="Ruta de Destino:").pack(pady=(20, 5))
+ttk.Label(root, text="Ruta de Destino:").pack(pady=(10, 5))
 destination_entry = ttk.Entry(root, textvariable=destination_path_var, width=50)
 destination_entry.pack(pady=5)
 ttk.Button(root, text="Seleccionar Carpeta", command=select_destination).pack(pady=5)
 
-# Botón de mover archivos
 ttk.Button(root, text="Mover Archivos", command=move_files).pack(pady=(20, 10))
+
+# -----------------------------
+# Sección: Configuración de Antena
+# -----------------------------
+ttk.Label(root, text="Configuración de Antena").pack(pady=(30, 5))
+
+label_host = ttk.Label(root, text="REMOTE_HOST: Cargando...")
+label_host.pack()
+
+label_potencia = ttk.Label(root, text="POTENCIA: Cargando...")
+label_potencia.pack()
+
+ttk.Button(root, text="Mostrar Datos", command=mostrar_datos_antena).pack(pady=(10, 5))
+
+potencia_entry = ttk.Entry(root, width=20)
+potencia_entry.pack(pady=(5, 5))
+ttk.Button(root, text="Actualizar Potencia", command=actualizar_potencia).pack(pady=(10, 10))
 
 # Ejecutar la aplicación
 root.mainloop()
