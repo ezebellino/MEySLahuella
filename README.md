@@ -67,6 +67,14 @@ La aplicación mostrará un error indicando que el archivo o la sección no se e
 
 ---
 
+### **Resumen sobre la portabilidad**
+El archivo **es portable** siempre que:
+- El archivo `TciNumero.ini` exista en `C:\Windows\`.
+- Las dependencias requeridas (como configuraciones y permisos) estén disponibles en la máquina destino.
+- Si compartes el ejecutable con otros, asegúrate de incluir instrucciones claras sobre cómo configurarlo.
+
+---
+
 ## **Cómo contribuir**
 Si deseas contribuir a este proyecto:
 1. Haz un fork del repositorio: [https://github.com/ezebellino/MEySLaHuella](https://github.com/ezebellino/MEySLaHuella).
