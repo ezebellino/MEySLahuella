@@ -1,10 +1,24 @@
-
-from datetime import datetime
 import os
-import shutil
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+import subprocess
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 from app import buscar_archivo_ini, leer_configuracion, find_and_move_files, editar_potencia
+
+# -----------------------------
+# Función para abrir el programa de testeo
+# -----------------------------
+def abrir_testeo():
+    ruta_programa = "C:\\Via\\Aplicacion\\"
+    
+    if not os.path.exists(ruta_programa):
+        messagebox.showerror("Error", "El programa de testeo no se encuentra en la ubicación especificada.")
+        print(f"no se encuentra la {ruta_programa}")
+        return
+
+    try:
+        subprocess.run(["runas", "/user:administrator", ruta_programa], input="+-*AUMARadmin", text=True)
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo abrir el programa: {e}")
 
 # -----------------------------
 # Funciones para mover archivos
@@ -41,9 +55,8 @@ def mostrar_datos_antena():
         archivo_ini = buscar_archivo_ini()
         remote_host, potencia = leer_configuracion(archivo_ini)
 
-        # Mostrar los datos en la interfaz
-        label_host.config(text=f"REMOTE_HOST: {remote_host}")
-        label_potencia.config(text=f"POTENCIA: {potencia}")
+        label_host.configure(text=f"REMOTE_HOST: {remote_host}")
+        label_potencia.configure(text=f"POTENCIA: {potencia}")
 
     except Exception as e:
         messagebox.showerror("Error", f"Error al leer el archivo: {e}")
@@ -64,57 +77,62 @@ def actualizar_potencia():
         messagebox.showerror("Error", f"Error al actualizar la potencia: {e}")
 
 # -----------------------------
-# Configuración de la interfaz gráfica
+# Configuración de la interfaz gráfica con CustomTkinter
 # -----------------------------
-root = tk.Tk()
-root.title("Configuración y Mover Archivos")
-root.geometry("500x600")
-root.resizable(False, False)
+ctk.set_appearance_mode("dark")  # Tema oscuro moderno
+ctk.set_default_color_theme("blue")  # Paleta de colores
 
-# Variables
-source_path_var = tk.StringVar()
-destination_path_var = tk.StringVar()
-
-# Estilos modernos
-style = ttk.Style()
-style.theme_use("clam")
-style.configure("TButton", background="#1d3557", foreground="white", font=("Arial", 10, "bold"))
-style.configure("TLabel", font=("Arial", 10))
-style.configure("TEntry", font=("Arial", 10))
+root = ctk.CTk()
+root.title("Gestión de Archivos y Configuración - Sistemas La Huella")
+root.geometry("600x500")
 
 # -----------------------------
 # Sección: Mover Archivos
 # -----------------------------
-ttk.Label(root, text="Mover Archivos .dat").pack(pady=(20, 5))
+frame_archivos = ctk.CTkFrame(root)
+frame_archivos.pack(pady=10, padx=20, fill="x")
 
-ttk.Label(root, text="Ruta de Origen:").pack(pady=(10, 5))
-source_entry = ttk.Entry(root, textvariable=source_path_var, width=50)
-source_entry.pack(pady=5)
-ttk.Button(root, text="Seleccionar Carpeta", command=select_source).pack(pady=5)
+ctk.CTkLabel(frame_archivos, text="Mover Archivos .dat", font=("Arial", 14, "bold")).pack(pady=10)
 
-ttk.Label(root, text="Ruta de Destino:").pack(pady=(10, 5))
-destination_entry = ttk.Entry(root, textvariable=destination_path_var, width=50)
-destination_entry.pack(pady=5)
-ttk.Button(root, text="Seleccionar Carpeta", command=select_destination).pack(pady=5)
+source_path_var = ctk.StringVar()
+destination_path_var = ctk.StringVar()
 
-ttk.Button(root, text="Mover Archivos", command=move_files).pack(pady=(20, 10))
+ctk.CTkEntry(frame_archivos, textvariable=source_path_var, width=350).pack(pady=5)
+ctk.CTkButton(frame_archivos, text="Seleccionar Origen", command=select_source).pack(pady=5)
+
+ctk.CTkEntry(frame_archivos, textvariable=destination_path_var, width=350).pack(pady=5)
+ctk.CTkButton(frame_archivos, text="Seleccionar Destino", command=select_destination).pack(pady=5)
+
+ctk.CTkButton(frame_archivos, text="Mover Archivos", command=move_files, fg_color="green").pack(pady=10)
 
 # -----------------------------
 # Sección: Configuración de Antena
 # -----------------------------
-ttk.Label(root, text="Configuración de Antena").pack(pady=(30, 5))
+frame_antena = ctk.CTkFrame(root)
+frame_antena.pack(pady=10, padx=20, fill="x")
 
-label_host = ttk.Label(root, text="REMOTE_HOST: Cargando...")
+ctk.CTkLabel(frame_antena, text="Configuración de Antena", font=("Arial", 14, "bold")).pack(pady=10)
+
+label_host = ctk.CTkLabel(frame_antena, text="REMOTE_HOST: Cargando...")
 label_host.pack()
 
-label_potencia = ttk.Label(root, text="POTENCIA: Cargando...")
+label_potencia = ctk.CTkLabel(frame_antena, text="POTENCIA: Cargando...")
 label_potencia.pack()
 
-ttk.Button(root, text="Mostrar Datos", command=mostrar_datos_antena).pack(pady=(10, 5))
+potencia_entry = ctk.CTkEntry(frame_antena, width=100)
+potencia_entry.pack(pady=5)
 
-potencia_entry = ttk.Entry(root, width=20)
-potencia_entry.pack(pady=(5, 5))
-ttk.Button(root, text="Actualizar Potencia", command=actualizar_potencia).pack(pady=(10, 10))
+ctk.CTkButton(frame_antena, text="Actualizar Potencia", command=actualizar_potencia).pack(pady=5)
+ctk.CTkButton(frame_antena, text="Mostrar Datos", command=mostrar_datos_antena).pack(pady=5)
+
+# -----------------------------
+# Sección: Acceso Directo a Testeo
+# -----------------------------
+frame_testeo = ctk.CTkFrame(root)
+frame_testeo.pack(pady=10, padx=20, fill="x")
+
+ctk.CTkLabel(frame_testeo, text="Acceso a Testeo de Aplicación", font=("Arial", 14, "bold")).pack(pady=10)
+ctk.CTkButton(frame_testeo, text="Abrir Testeo", command=abrir_testeo, fg_color="orange").pack(pady=10)
 
 # Ejecutar la aplicación
 root.mainloop()

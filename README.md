@@ -7,7 +7,7 @@ Este proyecto es una aplicación gráfica desarrollada en Python que permite:
    - Editar fácilmente el valor de `POTENCIA` directamente desde la interfaz gráfica.
 
 ---
-
+# Versión 1.00:
 ## **Características**
 - **Interfaz gráfica intuitiva**: Diseñada con Tkinter, incluye una interfaz moderna y fácil de usar.
 - **Automatización del manejo de archivos**:
@@ -81,3 +81,14 @@ Si deseas contribuir a este proyecto:
 2. Crea una nueva rama para tus cambios:
    ```bash
    git checkout -b nueva-funcionalidad
+
+## Buscando mejorar y migrar a la versión 1.01
+## **Nuevas Mejoras y Funcionalidades**
+- **Interfaz modernizada**: Ahora usa `CustomTkinter` con un diseño más limpio y botones estilizados.
+- **Acceso directo al programa de testeo**: Se agregó un botón para abrir la aplicación de testeo ubicada en `C:\Via\Aplicación\`.
+- **Soporte para permisos de administrador**: Si el programa de testeo requiere permisos, el sistema intentará abrirlo con credenciales de administrador.
+
+## **Requisitos adicionales**
+Antes de ejecutar la nueva versión, instala CustomTkinter:
+```bash
+pip install customtkinter
