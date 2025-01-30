@@ -131,7 +131,7 @@ ctk.set_default_color_theme("blue")  # Tema moderno
 
 root = ctk.CTk()
 root.title("Dashboard - Gestión de Peaje")
-root.geometry("1200x450")
+root.geometry("1200x600")
 root.resizable(False, False)
 
 # Configurar el Grid para el Dashboard
@@ -162,14 +162,13 @@ frame_puertos.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 ctk.CTkLabel(frame_puertos, text="Puertos COM Activos", font=("Arial", 14, "bold"), text_color="black").pack(pady=5)
 label_puertos = ctk.CTkLabel(frame_puertos, text="Cargando...", anchor="w", text_color="black")
 label_puertos.pack()
-ctk.CTkButton(frame_puertos, text="Detectar Puertos", command=detectar_puertos_com, fg_color="darkblue").pack(pady=10)
+ctk.CTkButton(frame_puertos, text="Detectar Puertos", command=detectar_puertos_com, fg_color="#48D1CC").pack(pady=10)
 
 # Panel: Acceso a Testeo
 frame_testeo = ctk.CTkFrame(root, fg_color="#FF4500", corner_radius=10)
 frame_testeo.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
 
-ctk.CTkLabel(frame_testeo, text="Ingrese al Testeo", font=("Arial", 14, "bold"), text_color="white").pack(pady=5)
-ctk.CTkButton(frame_testeo, text="Abrir Testeo", command=abrir_testeo, fg_color="darkorange").pack(expand=True, pady=20)
+ctk.CTkButton(frame_testeo, text="Abrir Testeo", command=abrir_testeo, fg_color="#FF6347").pack(expand=True, pady=20)
 
 # -----------------------------
 # Segunda fila: Mover Archivos, Configuración Antena, Última Actualización
@@ -206,29 +205,26 @@ ctk.CTkButton(frame_antena, text="Mostrar Datos", command=actualizar_datos_anten
 # -----------------------------
 # Panel: Última Actualización de Listas de Tags
 # -----------------------------
-frame_tags = ctk.CTkFrame(root, fg_color="#FFD700", corner_radius=10, border_width=2, border_color="black")
-frame_tags.grid(row=1, column=2, padx=10, pady=10, sticky="nsew")
+frame_tags = ctk.CTkFrame(root)
+frame_tags.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")  # Se asegura que ocupe toda la fila
 
-# Título centrado en la primera fila
-title_label = ctk.CTkLabel(frame_tags, text="Última Actualización de Listas de Tags", font=("Arial", 14, "bold"), text_color="black")
-title_label.grid(row=0, column=0, columnspan=2, pady=10, sticky="n")
+ctk.CTkLabel(frame_tags, text="Última Actualización de Listas de Tags", font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, pady=5)
 
 # Etiquetas para mostrar información de los archivos
-label_tag1_name = ctk.CTkLabel(frame_tags, text="LMTAGS_AUBASA.DAT:", font=("Arial", 12, "bold"), text_color="black", anchor="w")
-label_tag1_name.grid(row=1, column=0, sticky="w", padx=10, pady=5)
+label_tag1_name = ctk.CTkLabel(frame_tags, text="LMTAGS_AUBASA.DAT:", font=("Arial", 12, "bold"), anchor="w")
+label_tag1_name.grid(row=1, column=0, sticky="w", padx=10)
 
-label_tag1_info = ctk.CTkLabel(frame_tags, text="Archivo no encontrado", anchor="w", text_color="black")
-label_tag1_info.grid(row=1, column=1, sticky="w", padx=10, pady=5)
+label_tag1_info = ctk.CTkLabel(frame_tags, text="Archivo no encontrado", anchor="w")
+label_tag1_info.grid(row=1, column=1, sticky="w", padx=10)
 
-label_tag2_name = ctk.CTkLabel(frame_tags, text="LMTAGSPAT_AUBASA.DAT:", font=("Arial", 12, "bold"), anchor="w", text_color="black")
-label_tag2_name.grid(row=2, column=0, sticky="w", padx=10, pady=5)
+label_tag2_name = ctk.CTkLabel(frame_tags, text="LMTAGSPAT_AUBASA.DAT:", font=("Arial", 12, "bold"), anchor="w")
+label_tag2_name.grid(row=2, column=0, sticky="w", padx=10)
 
-label_tag2_info = ctk.CTkLabel(frame_tags, text="Archivo no encontrado", anchor="w", text_color="black")
-label_tag2_info.grid(row=2, column=1, sticky="w", padx=10, pady=5)
+label_tag2_info = ctk.CTkLabel(frame_tags, text="Archivo no encontrado", anchor="w")
+label_tag2_info.grid(row=2, column=1, sticky="w", padx=10)
 
-# Botón para refrescar los datos, centrado en la última fila
+# Botón para refrescar los datos
 ctk.CTkButton(frame_tags, text="Actualizar", command=actualizar_info_tags).grid(row=3, column=0, columnspan=2, pady=10)
-
 # -----------------------------
 # Cargar datos iniciales
 # -----------------------------
