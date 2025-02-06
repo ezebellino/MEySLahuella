@@ -59,7 +59,7 @@ def find_and_move_files(source_path, destination_path):
 # Funcionalidades de antena
 # -----------------------------
 
-def buscar_archivo_ini(ruta="C:\\Windows\\", nombre_archivo="TciNumero.ini.txt"):
+def buscar_archivo_ini(ruta="C:\\Windows\\", nombre_archivo="TciNumero.ini"):
     """Busca el archivo TciNumero.ini en la ruta especificada."""
     archivo = os.path.join(ruta, nombre_archivo)
     if os.path.exists(archivo):
