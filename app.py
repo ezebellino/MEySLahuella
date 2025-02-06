@@ -59,7 +59,7 @@ def find_and_move_files(source_path, destination_path):
 # Funcionalidades de antena
 # -----------------------------
 
-def buscar_archivo_ini(ruta="C:\\Users\\ezebe\\OneDrive\\Documentos", nombre_archivo="TciNumero.ini.txt"):
+def buscar_archivo_ini(ruta="C:\\Windows\\", nombre_archivo="TciNumero.ini.txt"):
     """Busca el archivo TciNumero.ini en la ruta especificada."""
     archivo = os.path.join(ruta, nombre_archivo)
     if os.path.exists(archivo):
@@ -95,7 +95,11 @@ def editar_potencia(archivo_ini, nueva_potencia):
     """Edita el valor de POTENCIA en la sección [ANTENA_UIP]."""
     config = configparser.ConfigParser()
     config.optionxform = str  # Mantiene el formato de las claves
-
+    # valor máximo de potencia es 30 y mínimo 0
+    if int(nueva_potencia) > 30 or int(nueva_potencia) < 0:
+        raise ValueError("El valor de POTENCIA debe estar entre 0 y 30.")
+    
+    
     try:
         with open(archivo_ini, "r", encoding="utf-8") as f:
             config.read_file(f)  # Leer el archivo con UTF-8
