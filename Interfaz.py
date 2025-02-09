@@ -83,12 +83,14 @@ def modificar_potencia():
         messagebox.showerror("Error", f"Error al actualizar la potencia: {e}")
 
 def abrir_testeo():
-    ruta_programa = "C:\\Via\\Aplicación\\"
+    ruta_programa = r"C:\\Via\\Testeo\\Testeo.exe"
+
     if not os.path.exists(ruta_programa):
-        messagebox.showerror("Error", "El programa de testeo no se encuentra en la ubicación especificada.")
+        messagebox.showerror("Error", f"No se encuentra el programa en la ubicación: {ruta_programa}")
         return
+
     try:
-        subprocess.run(["runas", "/user:administrator", ruta_programa], input="+-*AUMARadmin", text=True)
+        subprocess.run([ruta_programa], check=True)
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo abrir el programa: {e}")
 
