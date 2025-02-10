@@ -1,8 +1,4 @@
-def main():
-    from src.ui.Interfaz import run_app
-    run_app()
-
-if __name__ == "__main__":
+from src.ui.Interfaz import run_app
     
-    main()
-
+if __name__ == "__main__":
+    run_app()

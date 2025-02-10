@@ -27,10 +27,11 @@ def find_and_move_files(source_path, destination_path):
 
     # Mover archivos .dat
     files_moved = 0
-    for file in source.rglob("*.dat"):  # Busca archivos .dat en todos los subdirectorios
+    for file in source.rglob(
+        "*.dat"
+    ):  # Busca archivos .dat en todos los subdirectorios
         shutil.move(str(file), str(final_destination / file.name))
         files_moved += 1
 
     print(f"{files_moved} archivos .dat movidos a: {final_destination}")
     return final_destination if files_moved > 0 else None
-
