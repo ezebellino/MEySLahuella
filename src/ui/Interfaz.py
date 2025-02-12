@@ -118,7 +118,14 @@ def run_app():
 
     root = ctk.CTk()
     root.title("Dashboard - Gestión de Peaje")
-    root.geometry("800x600")
+    # En vez de ocupar TODA la pantalla, ocupa 80% y céntralo:
+    screen_w = root.winfo_screenwidth()
+    screen_h = root.winfo_screenheight()
+    win_w = int(screen_w * 0.8)
+    win_h = int(screen_h * 0.8)
+    x_pos = (screen_w - win_w) // 2
+    y_pos = (screen_h - win_h) // 2
+    root.geometry(f"{win_w}x{win_h}+{x_pos}+{y_pos}")
     root.resizable(False, False)
 
     pages = {}
