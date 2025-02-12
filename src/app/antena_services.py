@@ -1,59 +1,6 @@
-import os
-import shutil
 import configparser
-from datetime import datetime
-from pathlib import Path
+import os
 
-TAG_FILES = [
-    "C:\\Via\\Aplicacion\\LMTAGS_AUBASA.DAT",
-    "C:\\Via\\Aplicacion\\LMTAGSPAT_AUBASA.DAT"
-]
-
-def obtener_info_tags():
-    """Obtiene información de los archivos de tags (nombre, tamaño y última modificación)."""
-    info_archivos = []
-
-    for file_path in TAG_FILES:
-        file = Path(file_path)
-        if file.exists():
-            file_size_mb = round(file.stat().st_size / (1024 * 1024), 2)  # Convertir bytes a MB
-            last_modified = datetime.fromtimestamp(file.stat().st_mtime).strftime("%d-%m-%Y %H:%M:%S")
-            info_archivos.append({"nombre": file.name, "tamano": file_size_mb, "ultima_mod": last_modified})
-        else:
-            info_archivos.append({"nombre": file.name, "tamano": "No encontrado", "ultima_mod": "No disponible"})
-
-    return info_archivos
-
-def find_and_move_files(source_path, destination_path):
-    """Mueve todos los archivos .dat de la carpeta de origen a una subcarpeta con fecha en la carpeta de destino."""
-
-    source = Path(source_path)
-    destination = Path(destination_path)
-
-    if not source.exists():
-        print(f"La ruta de origen no existe: {source_path}")
-        return None
-
-    # Crear la carpeta de destino con la fecha actual
-    today = datetime.now().strftime("%d.%m.%y")
-    folder_name = today
-    counter = 1
-
-    while (destination / folder_name).exists():
-        folder_name = f"{today}-{counter}"
-        counter += 1
-
-    final_destination = destination / folder_name
-    final_destination.mkdir(parents=True, exist_ok=True)
-
-    # Mover archivos .dat
-    files_moved = 0
-    for file in source.rglob("*.dat"):  # Busca archivos .dat en todos los subdirectorios
-        shutil.move(str(file), str(final_destination / file.name))
-        files_moved += 1
-
-    print(f"{files_moved} archivos .dat movidos a: {final_destination}")
-    return final_destination if files_moved > 0 else None
 
 # -----------------------------
 # Funcionalidades de antena
