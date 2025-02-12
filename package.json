@@ -1,0 +1,15 @@
+{
+  "name": "meyslahuella",
+  "version": "1.0.0",
+  "description": "Este proyecto es una aplicación gráfica desarrollada en Python que permite: 1. **Mover archivos** con extensión `.dat` desde una carpeta de origen hacia una carpeta de destino, creando automáticamente una subcarpeta con fecha única. 2. **Gestionar información de antenas**:    - Leer y mostrar los valores de `REMOTE_HOST` (dirección IP) y `POTENCIA` desde un archivo de configuración `TciNumero.ini`.    - Editar fácilmente el valor de `POTENCIA` directamente desde la interfaz gráfica.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "flake8 .",
+    "format": "black .",
+    "check": "flake8 . && black --check ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
