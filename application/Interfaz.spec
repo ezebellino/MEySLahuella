@@ -1,19 +1,28 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+from PyInstaller.utils.hooks import collect_submodules
+
+# Rutas base
+base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+entry_file = os.path.join(base_path, "src", "ui", "Interfaz.py")
+theme_file = os.path.join(base_path, "src", "ui", "theme.json")
+icon_file = os.path.join(base_path, "src", "ui", "icon.ico")  # opcional
 
 a = Analysis(
-    ['Interfaz.py'],
-    pathex=[],
+    [entry_file],
+    pathex=[base_path],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=[
+        (theme_file, "src/ui"),  # <- asegura que theme.json esté empaquetado
+    ],
+    hiddenimports=collect_submodules('customtkinter'),
     hookspath=[],
-    hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
-    optimize=0,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -29,11 +38,11 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False,  # True para ver errores en consola
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icon.ico'],
+    icon=icon_file if os.path.exists(icon_file) else None
 )

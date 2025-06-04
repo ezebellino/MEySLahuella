@@ -1,0 +1,17 @@
+{
+  "color_scale": {
+    "primary": "#3b82f6",
+    "secondary": "#1e293b",
+    "accent": "#22d3ee",
+    "background": "#0f172a",
+    "text": "#f1f5f9"
+  },
+  "CTkButton": {
+    "corner_radius": 10,
+    "hover_color": "#2563eb"
+  },
+  "CTkEntry": {
+    "border_width": 2,
+    "corner_radius": 8
+  }
+}
