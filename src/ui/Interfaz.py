@@ -46,21 +46,25 @@ class DashboardApp(ctk.CTk):
         self.page_titles = {
             0: "Panel Operativo",
             1: "Archivos y Antena",
+            2: "Configuracion",
         }
         self.page_subtitles = {
             0: "Monitoreo rapido del puesto y accesos directos a tareas frecuentes.",
             1: "Gestion de tags, potencia de antena y movimiento de archivos DAT.",
+            2: "Credenciales, rutas y parametros editables para adaptar la aplicacion a cada puesto.",
         }
         self.nav_buttons = {}
         self.current_page = 0
         self.current_via_number = None
         self.source_var = ctk.StringVar(value=self.settings["paths"]["source_path"])
         self.dest_var = ctk.StringVar(value=self.settings["paths"]["destination_path"])
+        self.admin_vars = {}
         self.widgets = {}
         self.toast_counter = 0
         self.toasts = {}
 
         self._configure_window()
+        self._initialize_admin_vars()
         self._build_layout()
         self._build_pages()
         self._build_login()
@@ -102,6 +106,7 @@ class DashboardApp(ctk.CTk):
 
         self.nav_buttons[0] = self._create_nav_button("Resumen del sistema", 0, 1)
         self.nav_buttons[1] = self._create_nav_button("Operacion y archivos", 1, 2)
+        self.nav_buttons[2] = self._create_nav_button("Configuracion", 2, 3)
 
         info_box = ctk.CTkFrame(self.sidebar, fg_color="#101b30", corner_radius=18, border_width=1, border_color=BORDER)
         info_box.grid(row=5, column=0, sticky="ew", padx=20, pady=12)
@@ -219,6 +224,27 @@ class DashboardApp(ctk.CTk):
     def _build_pages(self):
         self.pages[0] = self._build_system_page()
         self.pages[1] = self._build_operations_page()
+        self.pages[2] = self._build_admin_page()
+
+    def _initialize_admin_vars(self):
+        path_settings = self.settings["paths"]
+        antenna_settings = self.settings["antenna"]
+        tag_settings = self.settings["tags"]
+        self.admin_vars = {
+            "auth_username": ctk.StringVar(value=self.settings["auth"]["username"]),
+            "auth_password": ctk.StringVar(value=self.settings["auth"]["password"]),
+            "source_path": ctk.StringVar(value=path_settings["source_path"]),
+            "destination_path": ctk.StringVar(value=path_settings["destination_path"]),
+            "testeo_path": ctk.StringVar(value=path_settings["testeo_path"]),
+            "reader_test_path": ctk.StringVar(value=path_settings["reader_test_path"]),
+            "uip_reader_path": ctk.StringVar(value=path_settings["uip_reader_path"]),
+            "antenna_ini_dir": ctk.StringVar(value=path_settings["antenna_ini_dir"]),
+            "antenna_ini_name": ctk.StringVar(value=path_settings["antenna_ini_name"]),
+            "tag_file_1": ctk.StringVar(value=tag_settings["files"][0] if tag_settings["files"] else ""),
+            "tag_file_2": ctk.StringVar(value=tag_settings["files"][1] if len(tag_settings["files"]) > 1 else ""),
+            "reader_test_vias": ctk.StringVar(value=self._format_via_list(antenna_settings["reader_test_vias"])),
+            "uip_reader_vias": ctk.StringVar(value=self._format_via_list(antenna_settings["uip_reader_vias"])),
+        }
 
     def _build_page_shell(self):
         page = ctk.CTkScrollableFrame(
@@ -474,6 +500,26 @@ class DashboardApp(ctk.CTk):
         ).pack(side="left")
         ctk.CTkButton(
             buttons_row,
+            text="Abrir TCI.ini",
+            command=self.abrir_tci_ini,
+            font=("Poppins", 14),
+            fg_color=NEUTRAL,
+            hover_color=NEUTRAL_HOVER,
+            corner_radius=12,
+            height=40,
+        ).pack(side="left", padx=(10, 0))
+        ctk.CTkButton(
+            buttons_row,
+            text="Abrir carpeta de antena",
+            command=self.abrir_carpeta_antena,
+            font=("Poppins", 14),
+            fg_color=NEUTRAL,
+            hover_color=NEUTRAL_HOVER,
+            corner_radius=12,
+            height=40,
+        ).pack(side="left", padx=(10, 0))
+        ctk.CTkButton(
+            buttons_row,
             text="Abrir configurador de antena",
             command=self.abrir_configurador_antena,
             font=("Poppins", 14),
@@ -587,6 +633,139 @@ class DashboardApp(ctk.CTk):
         )
         label.pack(anchor="w", padx=16, pady=(0, 16))
         self.widgets[value_key] = label
+
+    def _build_admin_page(self):
+        page = self._build_page_shell()
+
+        hero = ctk.CTkFrame(page, fg_color="#0d1628", corner_radius=24, border_width=1, border_color=BORDER)
+        hero.pack(fill="x", pady=(0, 18))
+        ctk.CTkLabel(
+            hero,
+            text="Centro administrativo",
+            font=ctk.CTkFont("Poppins", 24, "bold"),
+            text_color=TEXT,
+        ).pack(anchor="w", padx=22, pady=(20, 4))
+        ctk.CTkLabel(
+            hero,
+            text="Desde aca podes ajustar credenciales, rutas y asociaciones de vias sin modificar archivos manualmente.",
+            font=ctk.CTkFont("Poppins", 13),
+            text_color=MUTED,
+            wraplength=920,
+            justify="left",
+        ).pack(anchor="w", padx=22, pady=(0, 16))
+
+        auth_section = self._build_section(
+            page,
+            "Acceso",
+            "Credenciales locales para iniciar sesion en la aplicacion.",
+        )
+        auth_grid = ctk.CTkFrame(auth_section, fg_color="transparent")
+        auth_grid.pack(fill="x", padx=18, pady=(0, 18))
+        auth_grid.grid_columnconfigure(0, weight=1)
+        auth_grid.grid_columnconfigure(1, weight=1)
+        self._add_labeled_entry(auth_grid, "Usuario", self.admin_vars["auth_username"], 0, 0)
+        self._add_labeled_entry(auth_grid, "Contrasena", self.admin_vars["auth_password"], 0, 1, show="*")
+
+        paths_section = self._build_section(
+            page,
+            "Rutas operativas",
+            "Ubicaciones de trabajo que usa el dashboard para testeo, archivos y configuradores.",
+        )
+        paths_grid = ctk.CTkFrame(paths_section, fg_color="transparent")
+        paths_grid.pack(fill="x", padx=18, pady=(0, 18))
+        paths_grid.grid_columnconfigure(0, weight=1)
+        paths_grid.grid_columnconfigure(1, weight=1)
+        self._add_labeled_entry(paths_grid, "Origen DAT", self.admin_vars["source_path"], 0, 0)
+        self._add_labeled_entry(paths_grid, "Destino DAT", self.admin_vars["destination_path"], 0, 1)
+        self._add_labeled_entry(paths_grid, "Testeo.exe", self.admin_vars["testeo_path"], 1, 0)
+        self._add_labeled_entry(paths_grid, "ReaderTest.exe", self.admin_vars["reader_test_path"], 1, 1)
+        self._add_labeled_entry(paths_grid, "UipReader01demomain.exe", self.admin_vars["uip_reader_path"], 2, 0)
+        self._add_labeled_entry(paths_grid, "Carpeta INI de antena", self.admin_vars["antenna_ini_dir"], 2, 1)
+        self._add_labeled_entry(paths_grid, "Nombre archivo INI", self.admin_vars["antenna_ini_name"], 3, 0)
+
+        tags_section = self._build_section(
+            page,
+            "Tags y vias",
+            "Archivos monitoreados y vias asociadas a cada configurador de antena.",
+        )
+        tags_grid = ctk.CTkFrame(tags_section, fg_color="transparent")
+        tags_grid.pack(fill="x", padx=18, pady=(0, 18))
+        tags_grid.grid_columnconfigure(0, weight=1)
+        tags_grid.grid_columnconfigure(1, weight=1)
+        self._add_labeled_entry(tags_grid, "Archivo tag 1", self.admin_vars["tag_file_1"], 0, 0)
+        self._add_labeled_entry(tags_grid, "Archivo tag 2", self.admin_vars["tag_file_2"], 0, 1)
+        self._add_labeled_entry(
+            tags_grid,
+            "Vias ReaderTest",
+            self.admin_vars["reader_test_vias"],
+            1,
+            0,
+            helper_text="Separalas con comas. Ejemplo: 51, 52, 53, 9, 10, 11",
+        )
+        self._add_labeled_entry(
+            tags_grid,
+            "Vias UipReader",
+            self.admin_vars["uip_reader_vias"],
+            1,
+            1,
+            helper_text="Separalas con comas. Ejemplo: 54, 55, 7, 8",
+        )
+
+        actions = ctk.CTkFrame(page, fg_color="transparent")
+        actions.pack(fill="x", pady=(0, 12))
+        ctk.CTkButton(
+            actions,
+            text="Guardar configuracion",
+            command=self.save_admin_settings,
+            font=("Poppins", 14),
+            fg_color=SUCCESS,
+            hover_color=SUCCESS_HOVER,
+            corner_radius=12,
+            height=42,
+        ).pack(side="left")
+        ctk.CTkButton(
+            actions,
+            text="Recargar valores actuales",
+            command=self.load_admin_settings_from_runtime,
+            font=("Poppins", 14),
+            fg_color=NEUTRAL,
+            hover_color=NEUTRAL_HOVER,
+            corner_radius=12,
+            height=42,
+        ).pack(side="left", padx=(10, 0))
+
+        return page
+
+    def _add_labeled_entry(self, parent, label_text, variable, row, column, show=None, helper_text=None):
+        field = ctk.CTkFrame(parent, fg_color="transparent")
+        field.grid(row=row, column=column, sticky="ew", padx=6, pady=8)
+        ctk.CTkLabel(
+            field,
+            text=label_text,
+            font=ctk.CTkFont("Poppins", 13, "bold"),
+            text_color=TEXT,
+        ).pack(anchor="w", pady=(0, 6))
+        entry_kwargs = {
+            "textvariable": variable,
+            "font": ("Poppins", 14),
+            "height": 40,
+        }
+        if show is not None:
+            entry_kwargs["show"] = show
+        entry = ctk.CTkEntry(
+            field,
+            **entry_kwargs,
+        )
+        entry.pack(fill="x")
+        if helper_text:
+            ctk.CTkLabel(
+                field,
+                text=helper_text,
+                font=ctk.CTkFont("Poppins", 11),
+                text_color=MUTED,
+                wraplength=420,
+                justify="left",
+            ).pack(anchor="w", pady=(6, 0))
 
     def _schedule_initial_load(self):
         self.after(300, self.obtener_info_sistema)
@@ -708,6 +887,87 @@ class DashboardApp(ctk.CTk):
         self.settings["ui"]["last_page"] = self.current_page
         save_settings(self.settings)
 
+    def load_admin_settings_from_runtime(self):
+        self.admin_vars["auth_username"].set(self.settings["auth"]["username"])
+        self.admin_vars["auth_password"].set(self.settings["auth"]["password"])
+        self.admin_vars["source_path"].set(self.settings["paths"]["source_path"])
+        self.admin_vars["destination_path"].set(self.settings["paths"]["destination_path"])
+        self.admin_vars["testeo_path"].set(self.settings["paths"]["testeo_path"])
+        self.admin_vars["reader_test_path"].set(self.settings["paths"]["reader_test_path"])
+        self.admin_vars["uip_reader_path"].set(self.settings["paths"]["uip_reader_path"])
+        self.admin_vars["antenna_ini_dir"].set(self.settings["paths"]["antenna_ini_dir"])
+        self.admin_vars["antenna_ini_name"].set(self.settings["paths"]["antenna_ini_name"])
+        tag_files = self.settings["tags"]["files"]
+        self.admin_vars["tag_file_1"].set(tag_files[0] if tag_files else "")
+        self.admin_vars["tag_file_2"].set(tag_files[1] if len(tag_files) > 1 else "")
+        self.admin_vars["reader_test_vias"].set(self._format_via_list(self.settings["antenna"]["reader_test_vias"]))
+        self.admin_vars["uip_reader_vias"].set(self._format_via_list(self.settings["antenna"]["uip_reader_vias"]))
+        self.set_status("Formulario administrativo recargado.", "info")
+        self.notify("Valores administrativos recargados.", "info")
+
+    def _format_via_list(self, values):
+        return ", ".join(str(value) for value in values)
+
+    def _parse_via_list(self, raw_value, field_label):
+        values = []
+        for chunk in raw_value.split(","):
+            item = chunk.strip()
+            if not item:
+                continue
+            if not item.isdigit():
+                raise ValueError(f"{field_label} solo admite numeros separados por comas.")
+            values.append(int(item))
+        if not values:
+            raise ValueError(f"{field_label} no puede quedar vacio.")
+        return values
+
+    def save_admin_settings(self):
+        try:
+            username = self.admin_vars["auth_username"].get().strip()
+            password = self.admin_vars["auth_password"].get().strip()
+            antenna_ini_name = self.admin_vars["antenna_ini_name"].get().strip()
+            if not username:
+                raise ValueError("El usuario no puede quedar vacio.")
+            if not password:
+                raise ValueError("La contrasena no puede quedar vacia.")
+            if not antenna_ini_name:
+                raise ValueError("El nombre del archivo INI no puede quedar vacio.")
+
+            tag_files = [
+                self.admin_vars["tag_file_1"].get().strip(),
+                self.admin_vars["tag_file_2"].get().strip(),
+            ]
+            tag_files = [path for path in tag_files if path]
+            if not tag_files:
+                raise ValueError("Debes configurar al menos un archivo de tags.")
+
+            self.settings["auth"]["username"] = username
+            self.settings["auth"]["password"] = password
+            self.settings["paths"]["source_path"] = self.admin_vars["source_path"].get().strip()
+            self.settings["paths"]["destination_path"] = self.admin_vars["destination_path"].get().strip()
+            self.settings["paths"]["testeo_path"] = self.admin_vars["testeo_path"].get().strip()
+            self.settings["paths"]["reader_test_path"] = self.admin_vars["reader_test_path"].get().strip()
+            self.settings["paths"]["uip_reader_path"] = self.admin_vars["uip_reader_path"].get().strip()
+            self.settings["paths"]["antenna_ini_dir"] = self.admin_vars["antenna_ini_dir"].get().strip()
+            self.settings["paths"]["antenna_ini_name"] = antenna_ini_name
+            self.settings["tags"]["files"] = tag_files
+            self.settings["antenna"]["reader_test_vias"] = self._parse_via_list(
+                self.admin_vars["reader_test_vias"].get().strip(),
+                "Las vias de ReaderTest",
+            )
+            self.settings["antenna"]["uip_reader_vias"] = self._parse_via_list(
+                self.admin_vars["uip_reader_vias"].get().strip(),
+                "Las vias de UipReader",
+            )
+            self.source_var.set(self.settings["paths"]["source_path"])
+            self.dest_var.set(self.settings["paths"]["destination_path"])
+            self.persist_settings()
+            self.set_status("Configuracion guardada correctamente.", "success")
+            self.notify("Configuracion guardada correctamente.", "success")
+        except Exception as exc:
+            self.set_status(f"No se pudo guardar la configuracion: {exc}", "error")
+            messagebox.showerror("Error", str(exc))
+
     def seleccionar_destino(self):
         selected_dir = filedialog.askdirectory(title="Seleccionar carpeta destino")
         if selected_dir:
@@ -755,7 +1015,10 @@ class DashboardApp(ctk.CTk):
     def actualizar_datos_antena(self):
         try:
             self.set_busy("Leyendo configuracion de antena...")
-            archivo_ini = buscar_archivo_ini()
+            archivo_ini = buscar_archivo_ini(
+                self.settings["paths"]["antenna_ini_dir"],
+                self.settings["paths"]["antenna_ini_name"],
+            )
             remote_host, potencia = leer_configuracion(archivo_ini)
             self.widgets["label_antena_ip"].configure(text=remote_host)
             self.widgets["label_potencia"].configure(text=potencia)
@@ -769,7 +1032,10 @@ class DashboardApp(ctk.CTk):
 
     def modificar_potencia(self):
         try:
-            archivo_ini = buscar_archivo_ini()
+            archivo_ini = buscar_archivo_ini(
+                self.settings["paths"]["antenna_ini_dir"],
+                self.settings["paths"]["antenna_ini_name"],
+            )
             nueva_potencia = self.widgets["potencia_entry"].get().strip()
             if not nueva_potencia:
                 self.set_status("Ingresa un valor de potencia antes de guardar.", "warning")
@@ -810,6 +1076,43 @@ class DashboardApp(ctk.CTk):
             self.notify("Herramienta de testeo iniciada.", "success")
         except Exception as exc:
             self.set_status(f"No se pudo abrir la herramienta de testeo: {exc}", "error")
+            messagebox.showerror("Error", str(exc))
+        finally:
+            self.clear_busy()
+
+    def abrir_tci_ini(self):
+        ini_dir = self.settings["paths"]["antenna_ini_dir"]
+        tci_ini_path = os.path.join(ini_dir, "TCI.ini")
+        if not os.path.exists(tci_ini_path):
+            self.set_status("No se encontro TCI.ini en la carpeta configurada.", "error")
+            messagebox.showerror("Error", f"No se encuentra TCI.ini en {ini_dir}")
+            return
+
+        try:
+            self.set_busy("Abriendo archivo TCI.ini...")
+            os.startfile(tci_ini_path)
+            self.set_status("Archivo TCI.ini abierto correctamente.", "success")
+            self.notify("TCI.ini abierto correctamente.", "success")
+        except Exception as exc:
+            self.set_status(f"No se pudo abrir TCI.ini: {exc}", "error")
+            messagebox.showerror("Error", str(exc))
+        finally:
+            self.clear_busy()
+
+    def abrir_carpeta_antena(self):
+        ini_dir = self.settings["paths"]["antenna_ini_dir"]
+        if not os.path.isdir(ini_dir):
+            self.set_status("La carpeta de antena configurada no existe.", "error")
+            messagebox.showerror("Error", f"No se encuentra la carpeta {ini_dir}")
+            return
+
+        try:
+            self.set_busy("Abriendo carpeta de antena...")
+            os.startfile(ini_dir)
+            self.set_status("Carpeta de antena abierta correctamente.", "success")
+            self.notify("Carpeta de antena abierta.", "success")
+        except Exception as exc:
+            self.set_status(f"No se pudo abrir la carpeta de antena: {exc}", "error")
             messagebox.showerror("Error", str(exc))
         finally:
             self.clear_busy()
@@ -862,13 +1165,16 @@ class DashboardApp(ctk.CTk):
     def actualizar_info_tags(self):
         try:
             self.set_busy("Consultando estado de archivos de tags...")
-            info_tags = obtener_info_tags()
+            info_tags = obtener_info_tags(self.settings["tags"]["files"])
             self.widgets["label_tag1_info"].configure(
                 text=f"{info_tags[0]['tamano']} MB - {info_tags[0]['ultima_mod']}"
             )
-            self.widgets["label_tag2_info"].configure(
-                text=f"{info_tags[1]['tamano']} MB - {info_tags[1]['ultima_mod']}"
-            )
+            if len(info_tags) > 1:
+                self.widgets["label_tag2_info"].configure(
+                    text=f"{info_tags[1]['tamano']} MB - {info_tags[1]['ultima_mod']}"
+                )
+            else:
+                self.widgets["label_tag2_info"].configure(text="Sin segundo archivo configurado.")
             self.set_status("Estado de tags actualizado.", "success")
             self.notify("Estado de tags actualizado.", "success")
         except Exception as exc:
