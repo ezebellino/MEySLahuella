@@ -1,47 +1,89 @@
-# src/login.py
 import customtkinter as ctk
 from tkinter import messagebox
 
-class LoginWindow(ctk.CTk):
-    def __init__(self, on_success_callback):
-        super().__init__()
-        self.title("MEyS - Login")
-        self.geometry("400x480")
-        self.resizable(False, False)
+from src.ui.theme_utils import apply_theme
+
+apply_theme()
+
+
+class LoginFrame(ctk.CTkFrame):
+    def __init__(self, master, on_success_callback, on_cancel_callback):
+        super().__init__(master, fg_color="transparent")
         self.on_success_callback = on_success_callback
+        self.on_cancel_callback = on_cancel_callback
+        self._build_ui()
 
-        # Tipografías
-        font_title = ctk.CTkFont(family="Poppins", size=22, weight="bold")
-        font_entry = ctk.CTkFont(family="Poppins", size=14)
+    def _build_ui(self):
+        self.pack(fill="both", expand=True, padx=24, pady=24)
 
-        # Frame
-        frame = ctk.CTkFrame(master=self, corner_radius=15)
-        frame.pack(padx=20, pady=40, fill="both", expand=True)
+        container = ctk.CTkFrame(self, width=420, corner_radius=22, fg_color="#0f172a")
+        container.place(relx=0.5, rely=0.5, anchor="center")
 
-        ctk.CTkLabel(frame, text="Iniciar Sesión", font=font_title).pack(pady=(20, 10))
+        ctk.CTkLabel(
+            container,
+            text="MEyS",
+            font=ctk.CTkFont(family="Poppins", size=28, weight="bold"),
+            text_color="#f8fafc",
+        ).pack(pady=(28, 4))
 
-        self.username_entry = ctk.CTkEntry(frame, placeholder_text="Usuario", font=font_entry)
-        self.username_entry.pack(pady=(10, 10), padx=20, fill="x")
+        ctk.CTkLabel(
+            container,
+            text="Ingreso al panel operativo",
+            font=ctk.CTkFont(family="Poppins", size=14),
+            text_color="#94a3b8",
+        ).pack(pady=(0, 20))
 
-        self.password_entry = ctk.CTkEntry(frame, placeholder_text="Contraseña", show="*", font=font_entry)
-        self.password_entry.pack(pady=(0, 20), padx=20, fill="x")
+        self.username_entry = ctk.CTkEntry(
+            container,
+            placeholder_text="Usuario",
+            font=ctk.CTkFont(family="Poppins", size=14),
+            width=300,
+            height=42,
+        )
+        self.username_entry.pack(pady=(0, 12), padx=32)
+
+        self.password_entry = ctk.CTkEntry(
+            container,
+            placeholder_text="Contrasena",
+            show="*",
+            font=ctk.CTkFont(family="Poppins", size=14),
+            width=300,
+            height=42,
+        )
+        self.password_entry.pack(pady=(0, 18), padx=32)
 
         ctk.CTkButton(
-            frame,
+            container,
             text="Acceder",
             command=self.login_action,
             fg_color="#3b82f6",
             hover_color="#2563eb",
-            corner_radius=10
-        ).pack(pady=10)
+            corner_radius=12,
+            width=300,
+            height=42,
+        ).pack(pady=(0, 12))
+
+        ctk.CTkButton(
+            container,
+            text="Salir",
+            command=self.on_cancel_callback,
+            fg_color="#334155",
+            hover_color="#475569",
+            corner_radius=12,
+            width=300,
+            height=42,
+        ).pack(pady=(0, 28))
+
+        self.username_entry.bind("<Return>", lambda _event: self.login_action())
+        self.password_entry.bind("<Return>", lambda _event: self.login_action())
+        self.password_entry.bind("<Escape>", lambda _event: self.on_cancel_callback())
+        self.username_entry.focus()
 
     def login_action(self):
-        username = self.username_entry.get()
-        password = self.password_entry.get()
+        username = self.username_entry.get().strip()
+        password = self.password_entry.get().strip()
 
-        # Aquí puedes reemplazar con lógica real de autenticación
         if username == "admin" and password == "1234":
-            self.destroy()  # Cierra login
-            self.on_success_callback()  # Llama al dashboard
+            self.on_success_callback()
         else:
-            messagebox.showerror("Error", "Credenciales inválidas")
+            messagebox.showerror("Error", "Credenciales invalidas")
