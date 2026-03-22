@@ -12,11 +12,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from src.app.antena_services import buscar_archivo_ini, editar_potencia, leer_configuracion
 from src.app.mover_services import find_and_move_files
 from src.app.tag_services import obtener_info_tags
+from src.config.settings import load_settings, save_settings
 from src.ui.login import LoginFrame
 from src.ui.theme_utils import apply_theme
 
 DEFAULT_SOURCE_PATH = "C:\\Via\\Aplicacion"
 TESTEO_PATH = r"C:\\Via\\Testeo\\Testeo.exe"
+READER_TEST_PATH = r"C:\\APPS\\ReaderTest.exe"
+UIP_READER_PATH = r"C:\\Teste Antena\\UipReader01demomain.exe"
+
+READER_TEST_VIAS = {51, 52, 53, 9, 10, 11}
+UIP_READER_VIAS = {54, 55, 7, 8}
 
 APP_BG = "#09111f"
 SURFACE = "#0f172a"
@@ -43,6 +49,7 @@ class DashboardApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.authenticated = False
+        self.settings = load_settings()
         self.pages = {}
         self.page_titles = {
             0: "Panel Operativo",
@@ -54,9 +61,12 @@ class DashboardApp(ctk.CTk):
         }
         self.nav_buttons = {}
         self.current_page = 0
-        self.source_var = ctk.StringVar(value=DEFAULT_SOURCE_PATH)
-        self.dest_var = ctk.StringVar()
+        self.current_via_number = None
+        self.source_var = ctk.StringVar(value=self.settings.get("source_path", DEFAULT_SOURCE_PATH))
+        self.dest_var = ctk.StringVar(value=self.settings.get("destination_path", ""))
         self.widgets = {}
+        self.toast_counter = 0
+        self.toasts = {}
 
         self._configure_window()
         self._build_layout()
@@ -183,6 +193,8 @@ class DashboardApp(ctk.CTk):
         self.pages_container.grid_columnconfigure(0, weight=1)
         self.pages_container.grid_rowconfigure(0, weight=1)
         self._set_dashboard_visibility(False)
+        self.toast_host = ctk.CTkFrame(self.content, fg_color="transparent")
+        self.toast_host.place(relx=1.0, y=28, anchor="ne", x=-28)
 
     def _build_login(self):
         self.login_overlay = ctk.CTkFrame(self, fg_color=APP_BG, corner_radius=0)
@@ -193,6 +205,7 @@ class DashboardApp(ctk.CTk):
             self.login_overlay,
             on_success_callback=self.handle_login_success,
             on_cancel_callback=self.close_window,
+            initial_username=self.settings.get("last_username", ""),
         )
 
     def _create_nav_button(self, text, index, row):
@@ -467,6 +480,16 @@ class DashboardApp(ctk.CTk):
             corner_radius=12,
             height=40,
         ).pack(side="left")
+        ctk.CTkButton(
+            buttons_row,
+            text="Abrir configurador de antena",
+            command=self.abrir_configurador_antena,
+            font=("Poppins", 14),
+            fg_color=INFO,
+            hover_color=INFO_HOVER,
+            corner_radius=12,
+            height=40,
+        ).pack(side="left", padx=(10, 0))
 
         files_section = self._build_section(
             page,
@@ -595,6 +618,7 @@ class DashboardApp(ctk.CTk):
                 border_width=1 if is_active else 0,
                 border_color=BORDER,
             )
+        self.persist_settings()
 
     def _set_dashboard_visibility(self, visible):
         if visible:
@@ -604,12 +628,14 @@ class DashboardApp(ctk.CTk):
             self.sidebar.grid_remove()
             self.content.grid_remove()
 
-    def handle_login_success(self):
+    def handle_login_success(self, username):
         self.authenticated = True
+        self.settings["last_username"] = username
         self.login_overlay.destroy()
         self._set_dashboard_visibility(True)
-        self.show_page(0)
+        self.show_page(self.settings.get("last_page", 0))
         self.set_status("Sesion iniciada correctamente. Cargando estado del puesto...", "info")
+        self.notify("Sesion iniciada correctamente.", "success")
         self._schedule_initial_load()
 
     def set_status(self, message, status_type="info"):
@@ -634,11 +660,59 @@ class DashboardApp(ctk.CTk):
         self.configure(cursor="")
         self.update_idletasks()
 
+    def notify(self, message, level="info", duration_ms=3200):
+        color_map = {
+            "info": ("#0f1b31", INFO),
+            "success": ("#10261b", SUCCESS),
+            "warning": ("#2b1b0f", WARNING),
+            "error": ("#2d1320", "#ef4444"),
+        }
+        bg_color, dot_color = color_map.get(level, color_map["info"])
+        toast = ctk.CTkFrame(
+            self.toast_host,
+            fg_color=bg_color,
+            corner_radius=16,
+            border_width=1,
+            border_color=BORDER,
+        )
+        toast.pack(anchor="e", pady=(0, 10))
+        dot = ctk.CTkFrame(toast, width=10, height=10, corner_radius=999, fg_color=dot_color)
+        dot.pack(side="left", padx=(14, 10), pady=14)
+        ctk.CTkLabel(
+            toast,
+            text=message,
+            font=ctk.CTkFont("Poppins", 12, "bold"),
+            text_color=TEXT,
+            wraplength=300,
+            justify="left",
+        ).pack(side="left", padx=(0, 14), pady=12)
+
+        self.toast_counter += 1
+        toast_id = self.toast_counter
+        after_id = self.after(duration_ms, lambda: self._dismiss_toast(toast_id))
+        self.toasts[toast_id] = (toast, after_id)
+
+    def _dismiss_toast(self, toast_id):
+        toast_data = self.toasts.pop(toast_id, None)
+        if not toast_data:
+            return
+        toast, _after_id = toast_data
+        if toast.winfo_exists():
+            toast.destroy()
+
+    def persist_settings(self):
+        self.settings["source_path"] = self.source_var.get().strip()
+        self.settings["destination_path"] = self.dest_var.get().strip()
+        self.settings["last_page"] = self.current_page
+        save_settings(self.settings)
+
     def seleccionar_destino(self):
         selected_dir = filedialog.askdirectory(title="Seleccionar carpeta destino")
         if selected_dir:
             self.dest_var.set(selected_dir)
+            self.persist_settings()
             self.set_status(f"Destino seleccionado: {selected_dir}", "info")
+            self.notify("Carpeta de destino actualizada.", "info")
 
     def obtener_info_sistema(self):
         try:
@@ -646,11 +720,17 @@ class DashboardApp(ctk.CTk):
             nombre_equipo = socket.gethostname()
             ip_local = socket.gethostbyname(nombre_equipo)
             ip_split = ip_local.split(".")
-            via = f"Via {ip_split[3][-2:]} - La Huella" if len(ip_split) == 4 else "Via Desconocida"
+            self.current_via_number = self._parse_via_number(ip_local)
+            via = (
+                f"Via {self.current_via_number} - La Huella"
+                if self.current_via_number is not None
+                else "Via Desconocida"
+            )
             self.widgets["label_equipo"].configure(text=nombre_equipo)
             self.widgets["label_ip"].configure(text=ip_local)
             self.widgets["label_via"].configure(text=via)
             self.set_status("Informacion del sistema actualizada.", "success")
+            self.notify("Informacion del sistema actualizada.", "success")
         except Exception as exc:
             self.set_status(f"No se pudo actualizar la informacion del sistema: {exc}", "error")
             messagebox.showerror("Error", f"No se pudo obtener la informacion de red: {exc}")
@@ -666,6 +746,7 @@ class DashboardApp(ctk.CTk):
             self.widgets["label_puertos"].configure(text=texto)
             status_type = "success" if disponibles else "warning"
             self.set_status(f"Puertos detectados: {texto}.", status_type)
+            self.notify(f"Puertos detectados: {texto}.", status_type)
         finally:
             self.clear_busy()
 
@@ -677,6 +758,7 @@ class DashboardApp(ctk.CTk):
             self.widgets["label_antena_ip"].configure(text=remote_host)
             self.widgets["label_potencia"].configure(text=potencia)
             self.set_status("Configuracion de antena actualizada.", "success")
+            self.notify("Configuracion de antena actualizada.", "success")
         except Exception as exc:
             self.set_status(f"No se pudo leer la configuracion de antena: {exc}", "error")
             messagebox.showerror("Error", str(exc))
@@ -689,23 +771,24 @@ class DashboardApp(ctk.CTk):
             nueva_potencia = self.widgets["potencia_entry"].get().strip()
             if not nueva_potencia:
                 self.set_status("Ingresa un valor de potencia antes de guardar.", "warning")
-                messagebox.showwarning("Advertencia", "Ingresa un valor de potencia.")
+                self.notify("Ingresa un valor de potencia antes de guardar.", "warning")
                 self.widgets["potencia_entry"].focus()
                 return
             if not nueva_potencia.isdigit():
                 self.set_status("La potencia ingresada no es valida. Debe ser un numero entero.", "error")
-                messagebox.showerror("Error", "La potencia debe ser un numero.")
+                self.notify("La potencia debe ser un numero entero.", "error")
                 self.widgets["potencia_entry"].focus()
                 return
             if not messagebox.askyesno("Confirmar", f"Se actualizara la potencia a {nueva_potencia}. Deseas continuar?"):
                 self.set_status("Actualizacion de potencia cancelada por el usuario.", "warning")
+                self.notify("Actualizacion de potencia cancelada.", "warning")
                 return
             self.set_busy(f"Actualizando potencia a {nueva_potencia}...")
             editar_potencia(archivo_ini, nueva_potencia)
             self.actualizar_datos_antena()
             self.widgets["potencia_entry"].delete(0, "end")
             self.set_status(f"Potencia actualizada correctamente a {nueva_potencia}.", "success")
-            messagebox.showinfo("Exito", "POTENCIA actualizada.")
+            self.notify(f"Potencia actualizada a {nueva_potencia}.", "success")
         except Exception as exc:
             self.set_status(f"No se pudo actualizar la potencia: {exc}", "error")
             messagebox.showerror("Error", str(exc))
@@ -721,8 +804,52 @@ class DashboardApp(ctk.CTk):
             self.set_busy("Abriendo herramienta de testeo...")
             subprocess.run([TESTEO_PATH], check=True)
             self.set_status("Herramienta de testeo iniciada.", "success")
+            self.notify("Herramienta de testeo iniciada.", "success")
         except Exception as exc:
             self.set_status(f"No se pudo abrir la herramienta de testeo: {exc}", "error")
+            messagebox.showerror("Error", str(exc))
+        finally:
+            self.clear_busy()
+
+    def _parse_via_number(self, ip_local):
+        ip_split = ip_local.split(".")
+        if len(ip_split) != 4:
+            return None
+        last_octet = ip_split[3]
+        if not last_octet.isdigit():
+            return None
+        return int(last_octet)
+
+    def abrir_configurador_antena(self):
+        via_number = self.current_via_number
+        if via_number is None:
+            self.set_status("No se pudo determinar la via actual para abrir el configurador.", "warning")
+            self.notify("Actualiza la informacion del sistema para detectar la via.", "warning")
+            return
+
+        if via_number in READER_TEST_VIAS:
+            program_path = READER_TEST_PATH
+            program_name = "ReaderTest.exe"
+        elif via_number in UIP_READER_VIAS:
+            program_path = UIP_READER_PATH
+            program_name = "UipReader01demomain.exe"
+        else:
+            self.set_status(f"La via {via_number} no tiene un configurador asignado.", "warning")
+            self.notify(f"No hay configurador definido para la via {via_number}.", "warning")
+            return
+
+        if not os.path.exists(program_path):
+            self.set_status(f"No se encontro {program_name} en la ruta configurada.", "error")
+            messagebox.showerror("Error", f"No se encuentra {program_name} en {program_path}")
+            return
+
+        try:
+            self.set_busy(f"Abriendo configurador de antena para la via {via_number}...")
+            subprocess.run([program_path], check=True)
+            self.set_status(f"Configurador de antena abierto para la via {via_number}.", "success")
+            self.notify(f"Configurador abierto: {program_name}.", "success")
+        except Exception as exc:
+            self.set_status(f"No se pudo abrir el configurador de antena: {exc}", "error")
             messagebox.showerror("Error", str(exc))
         finally:
             self.clear_busy()
@@ -738,6 +865,7 @@ class DashboardApp(ctk.CTk):
                 text=f"{info_tags[1]['tamano']} MB - {info_tags[1]['ultima_mod']}"
             )
             self.set_status("Estado de tags actualizado.", "success")
+            self.notify("Estado de tags actualizado.", "success")
         except Exception as exc:
             self.set_status(f"No se pudo actualizar el estado de tags: {exc}", "error")
             messagebox.showerror("Error", str(exc))
@@ -750,26 +878,28 @@ class DashboardApp(ctk.CTk):
 
         if not source_path:
             self.set_status("Debes indicar una ruta de origen.", "warning")
-            messagebox.showwarning("Advertencia", "Ingresa una ruta de origen.")
+            self.notify("Ingresa una ruta de origen.", "warning")
             return
 
         if not os.path.exists(source_path):
             self.set_status("La ruta de origen no existe. Selecciona otra carpeta.", "warning")
-            messagebox.showwarning("Advertencia", "Ruta de origen invalida.")
+            self.notify("La ruta de origen no existe. Selecciona otra carpeta.", "warning")
             source_path = filedialog.askdirectory(title="Seleccionar carpeta origen")
             if not source_path:
                 self.set_status("Seleccion de carpeta de origen cancelada.", "warning")
+                self.notify("Seleccion de origen cancelada.", "warning")
                 return
             self.source_var.set(source_path)
+            self.persist_settings()
 
         if not destination_path:
             self.set_status("Debes seleccionar una carpeta de destino antes de mover archivos.", "warning")
-            messagebox.showwarning("Advertencia", "Selecciona una carpeta de destino.")
+            self.notify("Selecciona una carpeta de destino.", "warning")
             return
 
         if not os.path.exists(destination_path):
             self.set_status("La carpeta de destino indicada no es valida.", "error")
-            messagebox.showerror("Error", "Seleccione una carpeta de destino valida.")
+            self.notify("La carpeta de destino indicada no es valida.", "error")
             return
 
         if not messagebox.askyesno(
@@ -777,17 +907,19 @@ class DashboardApp(ctk.CTk):
             "Se moveran todos los archivos .dat encontrados en la carpeta origen. Deseas continuar?",
         ):
             self.set_status("Movimiento de archivos cancelado por el usuario.", "warning")
+            self.notify("Movimiento de archivos cancelado.", "warning")
             return
 
         try:
             self.set_busy("Moviendo archivos DAT. Esto puede tardar unos segundos...")
             final_folder = find_and_move_files(source_path, destination_path)
+            self.persist_settings()
             if final_folder:
                 self.set_status(f"Archivos movidos correctamente a {final_folder}.", "success")
-                messagebox.showinfo("Exito", f"Archivos movidos a: {final_folder}")
+                self.notify(f"Archivos movidos a {final_folder}.", "success", duration_ms=4200)
             else:
                 self.set_status("No se encontraron archivos .dat para mover.", "warning")
-                messagebox.showinfo("Sin cambios", "No se encontraron archivos .dat.")
+                self.notify("No se encontraron archivos .dat para mover.", "warning")
         except Exception as exc:
             self.set_status(f"No se pudieron mover los archivos: {exc}", "error")
             messagebox.showerror("Error", str(exc))
@@ -795,6 +927,12 @@ class DashboardApp(ctk.CTk):
             self.clear_busy()
 
     def close_window(self):
+        for _toast_id, (_toast, after_id) in list(self.toasts.items()):
+            try:
+                self.after_cancel(after_id)
+            except Exception:
+                pass
+        self.persist_settings()
         self.quit()
         self.destroy()
 
