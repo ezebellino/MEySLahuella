@@ -7,9 +7,9 @@ apply_theme()
 
 
 class LoginFrame(ctk.CTkFrame):
-    def __init__(self, master, on_success_callback, on_cancel_callback, initial_username=""):
+    def __init__(self, master, on_login_callback, on_cancel_callback, initial_username=""):
         super().__init__(master, fg_color="transparent")
-        self.on_success_callback = on_success_callback
+        self.on_login_callback = on_login_callback
         self.on_cancel_callback = on_cancel_callback
         self.initial_username = initial_username
         self._build_ui()
@@ -85,8 +85,6 @@ class LoginFrame(ctk.CTkFrame):
     def login_action(self):
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
-
-        if username == "admin" and password == "1234":
-            self.on_success_callback(username)
-        else:
-            messagebox.showerror("Error", "Credenciales invalidas")
+        success, error_message = self.on_login_callback(username, password)
+        if not success and error_message:
+            messagebox.showerror("Error", error_message)

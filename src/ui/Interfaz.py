@@ -16,14 +16,6 @@ from src.config.settings import load_settings, save_settings
 from src.ui.login import LoginFrame
 from src.ui.theme_utils import apply_theme
 
-DEFAULT_SOURCE_PATH = "C:\\Via\\Aplicacion"
-TESTEO_PATH = r"C:\\Via\\Testeo\\Testeo.exe"
-READER_TEST_PATH = r"C:\\APPS\\ReaderTest.exe"
-UIP_READER_PATH = r"C:\\Teste Antena\\UipReader01demomain.exe"
-
-READER_TEST_VIAS = {51, 52, 53, 9, 10, 11}
-UIP_READER_VIAS = {54, 55, 7, 8}
-
 APP_BG = "#09111f"
 SURFACE = "#0f172a"
 CARD = "#162033"
@@ -62,8 +54,8 @@ class DashboardApp(ctk.CTk):
         self.nav_buttons = {}
         self.current_page = 0
         self.current_via_number = None
-        self.source_var = ctk.StringVar(value=self.settings.get("source_path", DEFAULT_SOURCE_PATH))
-        self.dest_var = ctk.StringVar(value=self.settings.get("destination_path", ""))
+        self.source_var = ctk.StringVar(value=self.settings["paths"]["source_path"])
+        self.dest_var = ctk.StringVar(value=self.settings["paths"]["destination_path"])
         self.widgets = {}
         self.toast_counter = 0
         self.toasts = {}
@@ -203,9 +195,9 @@ class DashboardApp(ctk.CTk):
         self.login_overlay.grid_rowconfigure(0, weight=1)
         self.login_frame = LoginFrame(
             self.login_overlay,
-            on_success_callback=self.handle_login_success,
+            on_login_callback=self.handle_login,
             on_cancel_callback=self.close_window,
-            initial_username=self.settings.get("last_username", ""),
+            initial_username=self.settings["ui"]["last_username"],
         )
 
     def _create_nav_button(self, text, index, row):
@@ -628,12 +620,22 @@ class DashboardApp(ctk.CTk):
             self.sidebar.grid_remove()
             self.content.grid_remove()
 
+    def handle_login(self, username, password):
+        configured_username = self.settings["auth"]["username"]
+        configured_password = self.settings["auth"]["password"]
+        if username != configured_username or password != configured_password:
+            self.notify("Intento de acceso invalido.", "error")
+            return False, "Credenciales invalidas"
+
+        self.handle_login_success(username)
+        return True, None
+
     def handle_login_success(self, username):
         self.authenticated = True
-        self.settings["last_username"] = username
+        self.settings["ui"]["last_username"] = username
         self.login_overlay.destroy()
         self._set_dashboard_visibility(True)
-        self.show_page(self.settings.get("last_page", 0))
+        self.show_page(self.settings["ui"]["last_page"])
         self.set_status("Sesion iniciada correctamente. Cargando estado del puesto...", "info")
         self.notify("Sesion iniciada correctamente.", "success")
         self._schedule_initial_load()
@@ -701,9 +703,9 @@ class DashboardApp(ctk.CTk):
             toast.destroy()
 
     def persist_settings(self):
-        self.settings["source_path"] = self.source_var.get().strip()
-        self.settings["destination_path"] = self.dest_var.get().strip()
-        self.settings["last_page"] = self.current_page
+        self.settings["paths"]["source_path"] = self.source_var.get().strip()
+        self.settings["paths"]["destination_path"] = self.dest_var.get().strip()
+        self.settings["ui"]["last_page"] = self.current_page
         save_settings(self.settings)
 
     def seleccionar_destino(self):
@@ -796,13 +798,14 @@ class DashboardApp(ctk.CTk):
             self.clear_busy()
 
     def abrir_testeo(self):
-        if not os.path.exists(TESTEO_PATH):
+        testeo_path = self.settings["paths"]["testeo_path"]
+        if not os.path.exists(testeo_path):
             self.set_status("No se encontro Testeo.exe en la ruta configurada.", "error")
             messagebox.showerror("Error", "No se encuentra Testeo.exe")
             return
         try:
             self.set_busy("Abriendo herramienta de testeo...")
-            subprocess.run([TESTEO_PATH], check=True)
+            subprocess.run([testeo_path], check=True)
             self.set_status("Herramienta de testeo iniciada.", "success")
             self.notify("Herramienta de testeo iniciada.", "success")
         except Exception as exc:
@@ -822,16 +825,18 @@ class DashboardApp(ctk.CTk):
 
     def abrir_configurador_antena(self):
         via_number = self.current_via_number
+        antenna_settings = self.settings["antenna"]
+        path_settings = self.settings["paths"]
         if via_number is None:
             self.set_status("No se pudo determinar la via actual para abrir el configurador.", "warning")
             self.notify("Actualiza la informacion del sistema para detectar la via.", "warning")
             return
 
-        if via_number in READER_TEST_VIAS:
-            program_path = READER_TEST_PATH
+        if via_number in set(antenna_settings["reader_test_vias"]):
+            program_path = path_settings["reader_test_path"]
             program_name = "ReaderTest.exe"
-        elif via_number in UIP_READER_VIAS:
-            program_path = UIP_READER_PATH
+        elif via_number in set(antenna_settings["uip_reader_vias"]):
+            program_path = path_settings["uip_reader_path"]
             program_name = "UipReader01demomain.exe"
         else:
             self.set_status(f"La via {via_number} no tiene un configurador asignado.", "warning")
