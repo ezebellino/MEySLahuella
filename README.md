@@ -168,3 +168,142 @@ Generar ejecutable:
 - autenticacion real con usuarios por rol
 - versionado de releases
 - mejoras de logging y soporte operativo
+
+## Requisitos adicionales
+
+Antes de ejecutar la nueva version, instala CustomTkinter:
+
+```bash
+pip install customtkinter
+```
+
+## Version web (React + API) - Gestion centralizada de hosts
+
+Se agrego una nueva arquitectura para operar desde un host central y administrar otros hosts por red.
+
+### Backend API (Python)
+
+Archivo principal: `api_server.py`
+
+Funciones incluidas:
+- operacion local existente (antena, mover `.dat`, estado de tags)
+- gestion de hosts remotos con credenciales SSH
+- descubrimiento de hosts en subred (`10.95.25.0/24`)
+- operaciones remotas:
+  - ver archivos y directorios
+  - reiniciar terminal o servicio remoto
+  - ejecutar comandos remotos
+  - transmitir datos texto al servidor remoto
+
+### Frontend React
+
+Carpeta: `frontend/`
+
+Incluye:
+- dashboard modernizado
+- panel de hosts con alta, edicion y baja
+- escaneo de subred
+- explorador remoto de archivos
+- operaciones de terminal y transferencia
+
+### Instalacion y ejecucion
+
+1. Instalar dependencias API:
+
+```bash
+pip install -r requirements-api.txt
+```
+
+2. Levantar API:
+
+```bash
+python run_api.py
+```
+
+3. Levantar frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Inicio y parada silenciosa
+
+Desde la carpeta del proyecto:
+- doble click en `start_app_silent.vbs` para iniciar en segundo plano
+- doble click en `stop_app_silent.vbs` para detener
+
+Alternativa por comando:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start_app_background.ps1
+powershell -ExecutionPolicy Bypass -File .\stop_app_background.ps1
+```
+
+Estado de procesos:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\app_process_status.ps1
+```
+
+Los PID se guardan en `.run\lahuella-api.pid` y `.run\lahuella-web.pid`.
+
+### Hosts objetivo recomendados
+
+- DNS: `srvlahuella.lahuella.local`
+- IP: `192.168.2.10`
+- subred actualizada: `10.95.25.0/24`
+
+### Persistencia de hosts
+
+- archivo runtime: `data/hosts.json` (ignorado en git)
+- ejemplo de estructura: `data/hosts.example.json`
+- credenciales:
+  - se almacenan cifradas en reposo (`password_enc`)
+  - en Windows se usa DPAPI automaticamente
+  - incluyen rotacion con verificacion y rollback automatico
+
+### Scripts utiles para pruebas en red
+
+1. Diagnostico completo de red y puertos:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\collect_network_diagnostics.ps1
+```
+
+2. Test rapido de credenciales Windows/SMB:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\test_windows_credentials.ps1 -Server 10.95.25.10 -Username "LAHUELLA\Via" -Password "TU_PASSWORD"
+```
+
+3. Precarga automatica de vias en la API local:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\preload_vias.ps1 -Range 10 -Password "TU_PASSWORD"
+```
+
+### Nota de protocolo remoto
+
+La configuracion soporta tipo de host `windows` en el panel/API:
+- descubrimiento recomendado por puerto `445` (SMB)
+- operaciones de archivos por SMB
+- operaciones de comando o reinicio por WinRM (`5985`) cuando esta habilitado
+- chequeo de credenciales desde el panel para validar usuario y password por host
+
+### Modo portable para pendrive
+
+1. Construir bundle portable:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_bundle.ps1
+```
+
+2. Copiar `portable\SistemasLaHuellaPortable` al pendrive.
+3. En la PC destino ejecutar:
+- `start_portable_silent.vbs`
+- abrir `http://127.0.0.1:5173`
+- `stop_portable_silent.vbs` para cierre
+
+Mas detalle en `PORTABLE_PENDRIVE.md`.
