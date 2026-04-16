@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ejemplo-host-id",
+    "name": "SRV La Huella",
+    "address": "192.168.2.10",
+    "port": 22,
+    "username": "admin",
+    "password": "tu_password",
+    "base_path": "/var/log",
+    "restart_command": "sudo systemctl restart ssh || sudo service ssh restart"
+  }
+]
+
