@@ -14,3 +14,12 @@ build/
 env/
 venv/
 .venv/
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+data/hosts.json
+.run/
+*.log
+portable/
+data/audit_events.json
+data/infra_map.json
