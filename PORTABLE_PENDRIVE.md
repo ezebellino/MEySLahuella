@@ -16,6 +16,18 @@ Se genera:
 
 Copiar esa carpeta completa al pendrive.
 
+## 1.b) Preparar paquete portable total
+
+Este modo genera un bundle autonomo que no requiere `Python` ni `Node` en la PC destino.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_total_bundle.ps1
+```
+
+Se genera:
+
+`portable\SistemasLaHuellaPortableTotal`
+
 ## 2) Ejecutar en la PC de la estacion
 
 Dentro de `SistemasLaHuellaPortable`:
@@ -38,6 +50,8 @@ Para detener:
 
 - Doble click en `stop_portable_silent.vbs`
 
+En `SistemasLaHuellaPortableTotal` el flujo es el mismo.
+
 ## 3) Requisitos minimos en la PC destino
 
 - Windows 10/11 o Windows Server 2019
@@ -47,6 +61,8 @@ Para detener:
 ```powershell
 py -3 -m pip install -r requirements-api.txt
 ```
+
+Para `SistemasLaHuellaPortableTotal`, estos requisitos no aplican.
 
 ## 4) Notas operativas
 
@@ -61,3 +77,6 @@ py -3 -m pip install -r requirements-api.txt
 - PIDs:
   - `.run\lahuella-portable-api.pid`
   - `.run\lahuella-portable-web.pid`
+- En modo portable total, los procesos se ejecutan desde:
+  - `runtime\api\lahuella-api-portable.exe`
+  - `runtime\web\lahuella-web-portable.exe`

@@ -8,11 +8,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from app import (
+from src.app.antena_services import (
     buscar_archivo_ini,
     editar_potencia,
-    find_and_move_files,
     leer_configuracion,
+)
+from src.app.mover_services import find_and_move_files
+from src.app.tag_services import (
     obtener_info_tags,
 )
 from backend.audit_event_store import append_audit_event, list_audit_events

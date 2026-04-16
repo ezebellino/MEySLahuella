@@ -307,3 +307,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_bundle.ps1
 - `stop_portable_silent.vbs` para cierre
 
 Mas detalle en `PORTABLE_PENDRIVE.md`.
+
+### Modo portable total
+
+Genera un paquete autonomo con ejecutables propios para API y frontend, sin requerir Python ni Node en la PC destino:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_total_bundle.ps1
+```
+
+Salida:
+
+`portable\SistemasLaHuellaPortableTotal`

@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 
 $root = $PSScriptRoot
 $frontDist = Join-Path $root "frontend\dist"
+$frontStaticRoot = if (Test-Path $frontDist) { $frontDist } else { Join-Path $root "frontend" }
 $runDir = Join-Path $root ".run"
 New-Item -ItemType Directory -Path $runDir -Force | Out-Null
 
@@ -15,6 +16,8 @@ $apiLog = Join-Path $root "portable.api.log"
 $apiErr = Join-Path $root "portable.api.err.log"
 $webLog = Join-Path $root "portable.web.log"
 $webErr = Join-Path $root "portable.web.err.log"
+$apiExe = Join-Path $root "runtime\api\lahuella-api-portable.exe"
+$webExe = Join-Path $root "runtime\web\lahuella-web-portable.exe"
 
 function Test-Up {
     param([string]$Url)
@@ -38,8 +41,8 @@ function Stop-ByPidFile {
     Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
 }
 
-if (!(Test-Path $frontDist)) {
-    throw "No se encontro frontend\dist. Ejecuta scripts\build_portable_bundle.ps1 primero."
+if (!(Test-Path $frontStaticRoot)) {
+    throw "No se encontro frontend ni frontend\\dist. Ejecuta el builder portable correspondiente."
 }
 
 if ($ForceRestart) {
@@ -51,26 +54,48 @@ if ($ForceRestart) {
 if (!(Test-Up "http://127.0.0.1:8000/api/health")) {
     Remove-Item $apiLog -Force -ErrorAction SilentlyContinue
     Remove-Item $apiErr -Force -ErrorAction SilentlyContinue
-    $apiProc = Start-Process -FilePath "py" `
-        -ArgumentList @("-3", "-m", "uvicorn", "api_server:app", "--host", "127.0.0.1", "--port", "8000") `
-        -WorkingDirectory $root `
-        -RedirectStandardOutput $apiLog `
-        -RedirectStandardError $apiErr `
-        -WindowStyle Hidden `
-        -PassThru
+    if (Test-Path $apiExe) {
+        $apiProc = Start-Process -FilePath $apiExe `
+            -ArgumentList @("--root", $root, "--host", "127.0.0.1", "--port", "8000") `
+            -WorkingDirectory $root `
+            -RedirectStandardOutput $apiLog `
+            -RedirectStandardError $apiErr `
+            -WindowStyle Hidden `
+            -PassThru
+    }
+    else {
+        $apiProc = Start-Process -FilePath "py" `
+            -ArgumentList @("-3", "-m", "uvicorn", "api_server:app", "--host", "127.0.0.1", "--port", "8000") `
+            -WorkingDirectory $root `
+            -RedirectStandardOutput $apiLog `
+            -RedirectStandardError $apiErr `
+            -WindowStyle Hidden `
+            -PassThru
+    }
     $apiProc.Id | Out-File -FilePath $apiPidFile -Encoding ascii -NoNewline
 }
 
 if (!(Test-Up "http://127.0.0.1:5173")) {
     Remove-Item $webLog -Force -ErrorAction SilentlyContinue
     Remove-Item $webErr -Force -ErrorAction SilentlyContinue
-    $webProc = Start-Process -FilePath "py" `
-        -ArgumentList @("-3", "-m", "http.server", "5173", "--bind", "127.0.0.1", "--directory", $frontDist) `
-        -WorkingDirectory $root `
-        -RedirectStandardOutput $webLog `
-        -RedirectStandardError $webErr `
-        -WindowStyle Hidden `
-        -PassThru
+    if (Test-Path $webExe) {
+        $webProc = Start-Process -FilePath $webExe `
+            -ArgumentList @("--root", $root, "--host", "127.0.0.1", "--port", "5173") `
+            -WorkingDirectory $root `
+            -RedirectStandardOutput $webLog `
+            -RedirectStandardError $webErr `
+            -WindowStyle Hidden `
+            -PassThru
+    }
+    else {
+        $webProc = Start-Process -FilePath "py" `
+            -ArgumentList @("-3", "-m", "http.server", "5173", "--bind", "127.0.0.1", "--directory", $frontStaticRoot) `
+            -WorkingDirectory $root `
+            -RedirectStandardOutput $webLog `
+            -RedirectStandardError $webErr `
+            -WindowStyle Hidden `
+            -PassThru
+    }
     $webProc.Id | Out-File -FilePath $webPidFile -Encoding ascii -NoNewline
 }
 
