@@ -56,6 +56,9 @@ En el primer arranque de `SistemasLaHuellaPortableTotal`, el sistema intenta cre
 - `Sistemas La Huella`
 - `Detener Sistemas La Huella`
 
+Si queres forzarlo manualmente:
+- ejecutar `Instalar en Escritorio.bat`
+
 ## 3) Requisitos minimos en la PC destino
 
 - Windows 10/11 o Windows Server 2019
