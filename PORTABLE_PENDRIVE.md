@@ -52,6 +52,10 @@ Para detener:
 
 En `SistemasLaHuellaPortableTotal` el flujo es el mismo.
 
+En el primer arranque de `SistemasLaHuellaPortableTotal`, el sistema intenta crear automaticamente en el escritorio:
+- `Sistemas La Huella`
+- `Detener Sistemas La Huella`
+
 ## 3) Requisitos minimos en la PC destino
 
 - Windows 10/11 o Windows Server 2019

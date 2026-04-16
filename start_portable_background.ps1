@@ -18,6 +18,7 @@ $webLog = Join-Path $root "portable.web.log"
 $webErr = Join-Path $root "portable.web.err.log"
 $apiExe = Join-Path $root "runtime\api\lahuella-api-portable.exe"
 $webExe = Join-Path $root "runtime\web\lahuella-web-portable.exe"
+$shortcutFlagFile = Join-Path $runDir "desktop-shortcuts-installed.flag"
 
 function Test-Up {
     param([string]$Url)
@@ -41,9 +42,46 @@ function Stop-ByPidFile {
     Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
 }
 
+function Ensure-DesktopShortcut {
+    param(
+        [string]$Name,
+        [string]$TargetPath,
+        [string]$IconPath
+    )
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    $shortcutPath = Join-Path $desktop ($Name + ".lnk")
+    if (Test-Path $shortcutPath) { return }
+
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut($shortcutPath)
+    $shortcut.TargetPath = $TargetPath
+    $shortcut.WorkingDirectory = $root
+    $shortcut.IconLocation = "$IconPath,0"
+    $shortcut.Save()
+}
+
+function Install-DesktopShortcutsIfNeeded {
+    if (Test-Path $shortcutFlagFile) { return }
+    $iconPath = Join-Path $root "icon.ico"
+    $startTarget = Join-Path $root "start_portable_silent.vbs"
+    $stopTarget = Join-Path $root "stop_portable_silent.vbs"
+    if (!(Test-Path $iconPath) -or !(Test-Path $startTarget) -or !(Test-Path $stopTarget)) { return }
+
+    try {
+        Ensure-DesktopShortcut -Name "Sistemas La Huella" -TargetPath $startTarget -IconPath $iconPath
+        Ensure-DesktopShortcut -Name "Detener Sistemas La Huella" -TargetPath $stopTarget -IconPath $iconPath
+        Set-Content -Path $shortcutFlagFile -Value (Get-Date).ToString("s") -Encoding ascii
+    }
+    catch {
+        # No bloquear el inicio de la app si falla la creacion de accesos directos.
+    }
+}
+
 if (!(Test-Path $frontStaticRoot)) {
     throw "No se encontro frontend ni frontend\\dist. Ejecuta el builder portable correspondiente."
 }
+
+Install-DesktopShortcutsIfNeeded
 
 if ($ForceRestart) {
     Stop-ByPidFile -PidFile $apiPidFile

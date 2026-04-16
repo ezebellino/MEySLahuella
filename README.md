@@ -319,3 +319,5 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build_portable_total_bundle.p
 Salida:
 
 `portable\SistemasLaHuellaPortableTotal`
+
+En el primer arranque, el launcher crea automaticamente los accesos directos de escritorio para iniciar y detener la app si todavia no existen.
