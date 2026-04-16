@@ -59,6 +59,9 @@ En el primer arranque de `SistemasLaHuellaPortableTotal`, el sistema intenta cre
 Si queres forzarlo manualmente:
 - ejecutar `Instalar en Escritorio.bat`
 
+Si queres limpiar el escritorio y permitir una recreacion limpia en el proximo arranque:
+- ejecutar `Desinstalar accesos directos.bat`
+
 ## 3) Requisitos minimos en la PC destino
 
 - Windows 10/11 o Windows Server 2019

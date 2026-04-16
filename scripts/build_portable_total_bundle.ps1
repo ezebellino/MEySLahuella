@@ -93,6 +93,8 @@ $filesToCopy = @(
     "create_desktop_shortcut.ps1",
     "install_desktop_shortcuts.ps1",
     "Instalar en Escritorio.bat",
+    "uninstall_desktop_shortcuts.ps1",
+    "Desinstalar accesos directos.bat",
     "start_portable_background.ps1",
     "stop_portable_background.ps1",
     "start_portable_silent.vbs",

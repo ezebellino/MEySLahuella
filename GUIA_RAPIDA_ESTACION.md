@@ -15,6 +15,8 @@
   - `Detener Sistemas La Huella`
 - Si no aparecen, ejecutar:
   - `Instalar en Escritorio.bat`
+- Si queres quitarlos:
+  - `Desinstalar accesos directos.bat`
 
 ## 3. Uso basico
 
